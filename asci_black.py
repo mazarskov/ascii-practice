@@ -1,14 +1,15 @@
 from PIL import Image, ImageDraw, ImageFont
+import os
 
 ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
 
 
-box = 8
-font = 13
-width = 400
+box = 25
+font = 30
+width = 40
 
 
-def image_to_ascii(image_path, new_width=width):
+def image_to_ascii(image_path, new_width=width, ):
     # Load image and convert to grayscale
     image = Image.open(image_path).convert('L')
     
@@ -60,6 +61,10 @@ def ascii_to_image(ascii_str, box_size=20, font_size=None, font_path=None, outpu
     # Save the final image
     image.save(output_path)
 
-image_path = "juno.jpeg"
+image_path = "windows.jpg"
 ascii_art = image_to_ascii(image_path)
-ascii_to_image(ascii_art, box_size=box, font_size=font, font_path="E:\\coding\\python\\font\\SpaceMono-Bold.ttf", output_path='output_black.png')
+
+if os.name == 'nt':
+    ascii_to_image(ascii_art, box_size=box, font_size=font, font_path="E:\\coding\\python\\font\\SpaceMono-Bold.ttf", output_path='output_black.png')
+else:
+    ascii_to_image(ascii_art, box_size=box, font_size=font, font_path="font/SpaceMono-Bold.ttf", output_path='output_black.png')
