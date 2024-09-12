@@ -1,5 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import shutil
+import time
+import os
 
 # Define ASCII characters from dense to light
 LIGHT = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
@@ -17,19 +19,26 @@ width = 0
 approx = []
 
 
-def image_to_ascii(image_path, asci_list, new_width=width):
+def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     # Load image and convert to RGB
     image = Image.open(image_path).convert('RGB')
-    file1 = open("ascifile.txt", "w")
-    
-    # Resize image based on desired width
-    #current_size = shutil.get_terminal_size()
-    width, height = image.size
-    #width, height = shutil.get_terminal_size()
-    ratio = height / width  / 2 # Adjust height for aspect ratio, this preserves the original aspect ratio of the image.
-    new_height = int(new_width * ratio)
-    image = image.resize((new_width, new_height))
-    
+    #file1 = open("ascifile.txt", "w")
+    width_ter, height_ter = shutil.get_terminal_size()
+    if retainAspect == True:
+        # Resize image based on desired width
+        #current_size = shutil.get_terminal_size()
+        width, height = image.size
+
+        #width, height = shutil.get_terminal_size()
+        ratio = height / width  / 2 # Adjust height for aspect ratio, this preserves the original aspect ratio of the image.
+        new_height = int(new_width * ratio)
+        if (new_height > height_ter):
+            new_height = height_ter - 1
+            new_width = int(height_ter * (1/ratio))
+
+        image = image.resize((new_width, new_height))
+    else:
+        image = image.resize((width_ter, height_ter))
     # Convert pixels to ASCII and extract colors
     # Pixels in my case of "RGB" are a list of tuples, every tuple is threee values. So 'pixel' is (0, 0, 0)
     pixels = image.getdata()
@@ -56,8 +65,43 @@ def image_to_ascii(image_path, asci_list, new_width=width):
         # Starts at i and goes up to new width + i (non incusive)
         ascii_img += ascii_str[i:(i + new_width)] + "\n"
     # Strip used here to get rid of the last \n
-    file1.write(ascii_img.strip())
-    file1.close()
+    #file1.write(ascii_img.strip())
+    #file1.close()
+    print(ascii_img.strip())
     return ascii_img.strip(), colors
 
-image_to_ascii("kanagawa.jpg", LIGHT, 20)
+def fill_terminal_with_text_dynamic():
+    previous_size = shutil.get_terminal_size()
+    first_run = True
+
+    try:
+        while True:
+            current_size = shutil.get_terminal_size()
+
+            if current_size != previous_size or first_run:
+                if os.name == 'nt':
+                    os.system('cls')
+                else:
+                    os.system('clear')
+
+                terminal_width = current_size.columns
+                terminal_height = current_size.lines
+
+                image_to_ascii("kanagawa.jpg", LIGHT, terminal_width, True)
+
+
+                previous_size = current_size
+                first_run = False
+
+            #time.sleep(0.005)
+
+    except KeyboardInterrupt:
+        print("\nExiting...")
+
+
+width_ter, height_ter = shutil.get_terminal_size()
+
+#image_to_ascii("kanagawa.jpg", LIGHT, width_ter, True)
+
+if __name__ == "__main__":
+    fill_terminal_with_text_dynamic()

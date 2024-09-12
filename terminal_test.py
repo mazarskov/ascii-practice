@@ -31,7 +31,7 @@ def fill_terminal_with_text_dynamic(text):
                 previous_size = current_size
                 first_run = False
 
-            time.sleep(0.5)
+            time.sleep(0.01)
 
     except KeyboardInterrupt:
         print("\nExiting...")
