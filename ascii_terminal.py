@@ -17,20 +17,22 @@ for char in ASCII_CHARS:
 
 width = 0
 approx = []
+if os.name == 'nt':
+    os.system('cls')
+else:
+    os.system('clear')
 
 
 def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     # Load image and convert to RGB
+    print("\033[?25l", end="") # Makes the cursor invisble in the terminal
+
     image = Image.open(image_path).convert('RGB')
-    #file1 = open("ascifile.txt", "w")
     width_ter, height_ter = shutil.get_terminal_size()
     if retainAspect == True:
         # Resize image based on desired width
-        #current_size = shutil.get_terminal_size()
         width, height = image.size
-
-        #width, height = shutil.get_terminal_size()
-        ratio = height / width  / 2 # Adjust height for aspect ratio, this preserves the original aspect ratio of the image.
+        ratio = height / width  / 2 # Adjust height for aspect ratio
         new_height = int(new_width * ratio)
         if (new_height > height_ter):
             new_height = height_ter - 1
@@ -38,7 +40,7 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
 
         image = image.resize((new_width, new_height))
     else:
-        image = image.resize((width_ter, height_ter))
+        image = image.resize((width_ter, height_ter - 1)) # No idea what this "1" does but without it the ting breaks
     # Convert pixels to ASCII and extract colors
     # Pixels in my case of "RGB" are a list of tuples, every tuple is threee values. So 'pixel' is (0, 0, 0)
     pixels = image.getdata()
@@ -65,35 +67,25 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
         # Starts at i and goes up to new width + i (non incusive)
         ascii_img += ascii_str[i:(i + new_width)] + "\n"
     # Strip used here to get rid of the last \n
-    #file1.write(ascii_img.strip())
-    #file1.close()
-    print(ascii_img.strip())
+
+    print("\033[H" + ascii_img.strip()) # Escape code to print on top of text insted of first removing it.
     return ascii_img.strip(), colors
 
 def fill_terminal_with_text_dynamic():
-    previous_size = shutil.get_terminal_size()
-    first_run = True
-
+    previous_frame = [0, 0]
     try:
         while True:
             current_size = shutil.get_terminal_size()
-
-            if current_size != previous_size or first_run:
+            if current_size[0] < previous_frame[0]:
                 if os.name == 'nt':
+                    
                     os.system('cls')
                 else:
                     os.system('clear')
-
-                terminal_width = current_size.columns
-                terminal_height = current_size.lines
-
-                image_to_ascii("kanagawa.jpg", LIGHT, terminal_width, True)
-
-
-                previous_size = current_size
-                first_run = False
-
-            #time.sleep(0.005)
+            previous_frame = current_size
+            terminal_width = current_size.columns
+            image_to_ascii("kanagawa.jpg", LIGHT, terminal_width, True)
+            time.sleep(0.05)
 
     except KeyboardInterrupt:
         print("\nExiting...")
@@ -101,7 +93,6 @@ def fill_terminal_with_text_dynamic():
 
 width_ter, height_ter = shutil.get_terminal_size()
 
-#image_to_ascii("kanagawa.jpg", LIGHT, width_ter, True)
-
 if __name__ == "__main__":
+
     fill_terminal_with_text_dynamic()
