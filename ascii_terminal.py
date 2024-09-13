@@ -29,18 +29,28 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
 
     image = Image.open(image_path).convert('RGB')
     width_ter, height_ter = shutil.get_terminal_size()
+    width, height = image.size
+    ratio = height / width  / 2 # Adjust height for aspect ratio
     if retainAspect == True:
         # Resize image based on desired width
-        width, height = image.size
-        ratio = height / width  / 2 # Adjust height for aspect ratio
-        new_height = int(new_width * ratio)
-        if (new_height > height_ter):
+        if width_ter >= height_ter:
+            new_width = width_ter - 1
+            new_height = int(new_width * ratio)
+            image = image.resize((new_width, new_height))
+        elif height_ter > width_ter:
             new_height = height_ter - 1
-            new_width = int(height_ter * (1/ratio))
+            new_width = int(new_height * (1/ratio))
+            image = image.resize((new_width, new_height))
+        
+        if new_height >= height_ter:
+            new_height = height_ter - 1
+            new_width = int(new_height * (1/ratio))
+            image = image.resize((new_width, new_height))
 
-        image = image.resize((new_width, new_height))
     else:
-        image = image.resize((width_ter, height_ter - 1)) # No idea what this "1" does but without it the ting breaks
+        new_width = width_ter - 1
+        new_height = height_ter - 1
+        image = image.resize((new_width, new_height))
     # Convert pixels to ASCII and extract colors
     # Pixels in my case of "RGB" are a list of tuples, every tuple is threee values. So 'pixel' is (0, 0, 0)
     pixels = image.getdata()
@@ -50,7 +60,9 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     for pixel in pixels:
         # Calculate ASCII character based on grayscale approximation
         avg_color = sum(pixel) // 3
-        char = asci_list[avg_color // 25]
+        #char = asci_list[avg_color // 25]
+        index = min(avg_color // (256 // len(asci_list)), len(asci_list) - 1)
+        char = asci_list[index]
 
         ascii_str += char
         colors.append(pixel)
@@ -67,11 +79,10 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
         # Starts at i and goes up to new width + i (non incusive)
         ascii_img += ascii_str[i:(i + new_width)] + "\n"
     # Strip used here to get rid of the last \n
-
     print("\033[H" + ascii_img.strip()) # Escape code to print on top of text insted of first removing it.
     return ascii_img.strip(), colors
 
-def fill_terminal_with_text_dynamic():
+def fill_terminal_with_text_dynamic(image_path, ascii_set, retain_aspect):
     previous_frame = [0, 0]
     try:
         while True:
@@ -84,7 +95,7 @@ def fill_terminal_with_text_dynamic():
                     os.system('clear')
             previous_frame = current_size
             terminal_width = current_size.columns
-            image_to_ascii("kanagawa.jpg", LIGHT, terminal_width, True)
+            image_to_ascii(image_path, ascii_set, terminal_width, retain_aspect)
             time.sleep(0.05)
 
     except KeyboardInterrupt:
@@ -95,4 +106,4 @@ width_ter, height_ter = shutil.get_terminal_size()
 
 if __name__ == "__main__":
 
-    fill_terminal_with_text_dynamic()
+    fill_terminal_with_text_dynamic("windows.jpg", LIGHT, True)

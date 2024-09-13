@@ -83,16 +83,6 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
             new_width = int(new_height * (1/ratio))
             image = image.resize((new_width, new_height))
 
-        """
-        new_height = int(new_width * ratio)
-        if (new_height >= height_ter):
-            new_height = height_ter - 1
-            new_width = int(new_height * (1/ratio))
-        if (new_width >= width_ter):
-            new_width = width_ter - 1
-            new_height = int(new_width * ratio)
-        image = image.resize((new_width, new_height))
-        """
     else:
         new_width = width_ter - 1
         new_height = height_ter - 1
@@ -106,7 +96,9 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     for pixel in pixels:
         # Calculate ASCII character based on grayscale approximation
         avg_color = sum(pixel) // 3
-        char = asci_list[avg_color // 25]
+        #char = asci_list[avg_color // 25]
+        index = min(avg_color // (256 // len(asci_list)), len(asci_list) - 1)
+        char = asci_list[index]
 
         ascii_str += char
         colors.append(pixel)
@@ -128,35 +120,14 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     print("\033[H" + ascii_img.strip()) # Escape code to print on top of text insted of first removing it.
     return ascii_img.strip(), colors
 
-def fill_terminal_with_text_dynamic():
-    previous_frame = [0, 0]
-    try:
-        while True:
-            current_size = shutil.get_terminal_size()
-            if current_size[0] < previous_frame[0] or current_size[1] < previous_frame[1]:
-                if os.name == 'nt':
-                    
-                    os.system('cls')
-                else:
-                    os.system('clear')
-            previous_frame = current_size
-            terminal_width = current_size.columns
-            image_to_ascii("kanagawa.jpg", LIGHT, terminal_width, True)
-            #time.sleep(0.05)
-
-    except KeyboardInterrupt:
-        print("\nExiting...")
-
 
 width_ter, height_ter = shutil.get_terminal_size()
 def video_to_ascii(video_path, ascii_list, new_width, fps):
     previous_frame = [0, 0]
     cap = cv2.VideoCapture(video_path)
-    #print("\033[?25l", end="")
     if not cap.isOpened():
         print("Error: Could not open video.")
         return
-    frame_duration = 1 / fps
 
     paused = False 
     while cap.isOpened():
@@ -180,7 +151,6 @@ def video_to_ascii(video_path, ascii_list, new_width, fps):
                 else:
                     os.system('clear')
             previous_frame = current_size
-            terminal_width = current_size.columns
             generated_image = image_to_ascii(pil_image, ascii_list, new_width, True)
                     # Wait for 1 ms between frames (adjust for FPS)
             time.sleep(0.02)

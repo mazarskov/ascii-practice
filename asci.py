@@ -2,10 +2,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 # Define ASCII characters from dense to light
 ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+ASCII_CHARS_REVERSE = ['.', ',', ':', ';', '+', '*', '?', '%', 'S', '#', '@']
 
-box_size = 25 #8
-font_size = 30 #13
-width = 40
+box_size = 10 #8
+font_size = 15 #13
+width = 200
 approx = []
 
 def image_to_ascii(image_path, new_width=width):
@@ -29,7 +30,8 @@ def image_to_ascii(image_path, new_width=width):
     for pixel in pixels:
         # Calculate ASCII character based on grayscale approximation
         avg_color = sum(pixel) // 3
-        char = ASCII_CHARS[avg_color // 25]
+        index = min(avg_color // (256 // len(ASCII_CHARS_REVERSE)), len(ASCII_CHARS_REVERSE) - 1)
+        char = ASCII_CHARS_REVERSE[index]
         ascii_str += char
         colors.append(pixel)
         approx.append(avg_color)
@@ -105,7 +107,7 @@ def ascii_to_colored_image(ascii_str, colors, box_size=20, font_size=None, font_
     # Save the final image
     image.save(output_path)
 
-image_path = "windows.jpg"
+image_path = "picture.jpg"
 ascii_art, colors = image_to_ascii(image_path)
-ascii_to_colored_image(ascii_art, colors, box_size=box_size, font_size=font_size, font_path="font/SpaceMono-Bold.ttf", output_path='output.png')
+ascii_to_colored_image(ascii_art, colors, box_size=box_size, font_size=font_size, font_path="font/SpaceMono-Bold.ttf", output_path='output.png', back_color=35)
 print(sum(approx) / len(approx))
