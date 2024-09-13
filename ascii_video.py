@@ -3,6 +3,14 @@ import shutil
 import time
 import os
 import cv2
+import sys
+if os.name == 'nt':
+    import msvcrt  # Use msvcrt on Windows for keypress detection
+else:
+    import tty
+    import termios
+    import select 
+
 
 # Define ASCII characters from dense to light
 LIGHT = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
@@ -24,6 +32,32 @@ else:
     os.system('clear')
 f = open("log.txt", "w")
 
+
+if os.name == 'nt':
+    def get_keypress_windows():
+        if msvcrt.kbhit():
+            return msvcrt.getch().decode('utf-8')  # Return the pressed key
+        return None
+else:
+    def get_keypress_unix():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+# General keypress function depending on the platform
+def get_keypress():
+    if os.name == 'nt':
+        return get_keypress_windows()
+    else:
+        if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            return get_keypress_unix()
+    return None
+
 def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     # Load image and convert to RGB
     print("\033[?25l", end="") # Makes the cursor invisble in the terminal
@@ -31,18 +65,38 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     image = image_path
     width_ter, height_ter = shutil.get_terminal_size()
     f.write(f"Width: {width_ter} and Height: {height_ter}\n")
+    width, height = image.size
+    ratio = height / width  / 2 # Adjust height for aspect ratio
     if retainAspect == True:
         # Resize image based on desired width
-        width, height = image.size
-        ratio = height / width  / 2 # Adjust height for aspect ratio
-        new_height = int(new_width * ratio)
-        if (new_height > height_ter):
+        if width_ter >= height_ter:
+            new_width = width_ter - 1
+            new_height = int(new_width * ratio)
+            image = image.resize((new_width, new_height))
+        elif height_ter > width_ter:
             new_height = height_ter - 1
-            new_width = int(height_ter * (1/ratio))
+            new_width = int(new_height * (1/ratio))
+            image = image.resize((new_width, new_height))
+        
+        if new_height >= height_ter:
+            new_height = height_ter - 1
+            new_width = int(new_height * (1/ratio))
+            image = image.resize((new_width, new_height))
 
+        """
+        new_height = int(new_width * ratio)
+        if (new_height >= height_ter):
+            new_height = height_ter - 1
+            new_width = int(new_height * (1/ratio))
+        if (new_width >= width_ter):
+            new_width = width_ter - 1
+            new_height = int(new_width * ratio)
         image = image.resize((new_width, new_height))
+        """
     else:
-        image = image.resize((width_ter, height_ter - 1)) # No idea what this "1" does but without it the ting breaks
+        new_width = width_ter - 1
+        new_height = height_ter - 1
+        image = image.resize((new_width, new_height))
     # Convert pixels to ASCII and extract colors
     # Pixels in my case of "RGB" are a list of tuples, every tuple is threee values. So 'pixel' is (0, 0, 0)
     pixels = image.getdata()
@@ -69,7 +123,8 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
         # Starts at i and goes up to new width + i (non incusive)
         ascii_img += ascii_str[i:(i + new_width)] + "\n"
     # Strip used here to get rid of the last \n
-    f.write(f"\n{str(len(ascii_img))}")
+    f.write(f"{str(len(ascii_img))}\n")
+    f.write(f"Video size: {image.size}\n\n")
     print("\033[H" + ascii_img.strip()) # Escape code to print on top of text insted of first removing it.
     return ascii_img.strip(), colors
 
@@ -78,7 +133,7 @@ def fill_terminal_with_text_dynamic():
     try:
         while True:
             current_size = shutil.get_terminal_size()
-            if current_size[0] < previous_frame[0]:
+            if current_size[0] < previous_frame[0] or current_size[1] < previous_frame[1]:
                 if os.name == 'nt':
                     
                     os.system('cls')
@@ -95,51 +150,54 @@ def fill_terminal_with_text_dynamic():
 
 width_ter, height_ter = shutil.get_terminal_size()
 def video_to_ascii(video_path, ascii_list, new_width, fps):
+    previous_frame = [0, 0]
     cap = cv2.VideoCapture(video_path)
     #print("\033[?25l", end="")
     if not cap.isOpened():
         print("Error: Could not open video.")
         return
     frame_duration = 1 / fps
+
+    paused = False 
     while cap.isOpened():
-        start_time = time.time()
-        ret, frame = cap.read()
-        if not ret:
-            break  # Exit the loop if no more frames
+        if not paused:
+            ret, frame = cap.read()
+            if not ret:
+                break  # Exit the loop if no more frames
 
-        # Convert frame (cv2 image) to RGB and then to a PIL image
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(frame_rgb)
+            # Convert frame (cv2 image) to RGB and then to a PIL image
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(frame_rgb)
         
-        # Call the ASCII conversion function
-        #os.system('cls')
-        previous_frame = [0, 0]
-        current_size = shutil.get_terminal_size()
-        if current_size[0] < previous_frame[0]:
-            if os.name == 'nt':
+            # Call the ASCII conversion function
+            #os.system('cls')
+
+            current_size = shutil.get_terminal_size()
+            if current_size[0] < previous_frame[0] or current_size[1] < previous_frame[1]:
+                if os.name == 'nt':
                     
-                os.system('cls')
-            else:
-                os.system('clear')
-        previous_frame = current_size
-        terminal_width = current_size.columns
-        image_to_ascii(pil_image, ascii_list, new_width, True)
-        
-        # Control frame rate (adjust to match video FPS, e.g., 24 FPS -> 1/24)
-        # Calculate how long the frame processing took
-        processing_time = time.time() - start_time
-
-        # Calculate the remaining time to sleep to match the desired FPS
-        sleep_time = frame_duration - processing_time
-
-        # Only sleep if there's time remaining to maintain FPS
-        if sleep_time > 0:
-            time.sleep(sleep_time)
+                    os.system('cls')
+                else:
+                    os.system('clear')
+            previous_frame = current_size
+            terminal_width = current_size.columns
+            generated_image = image_to_ascii(pil_image, ascii_list, new_width, True)
+                    # Wait for 1 ms between frames (adjust for FPS)
+            time.sleep(0.02)
+        key = get_keypress()
+        if key == ' ':
+            paused = not paused
+        elif key == 's':
+            scrensh = open("screenshot.txt", "w")
+            scrensh.write(generated_image[0])
+            scrensh.close()
+        elif key == 'q':  
+            print("Exiting...")
+            print("\033[?25h", end="")
+            break
 
     cap.release()
     f.close()
-
-# Usage example
 
 
 if __name__ == "__main__":
