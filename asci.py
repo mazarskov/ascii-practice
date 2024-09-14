@@ -2,7 +2,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 # Define ASCII characters from dense to light
 ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
-ASCII_CHARS_REVERSE = ['.', ',', ':', ';', '+', '*', '?', '%', 'S', '#', '@']
+ASCII_CHARS_REVERSE = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+ASCII_CHARS_REVERSE.reverse()
+print(ASCII_CHARS_REVERSE)
 
 box_size = 10 #8
 font_size = 15 #13

@@ -5,6 +5,8 @@ import os
 
 # Define ASCII characters from dense to light
 LIGHT = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+LIGHT_REVERSE = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+LIGHT_REVERSE.reverse()
 ASCII_CHARS = ['$', '@', 'B', '%', '8', '&', 'W', 'M', '#', '*', 'o', 'a', 'h', 'k', 'b', 'd', 'p', 'q', 'w', 'm', 'Z', 'O', '0', 'Q', 'L', 'C', 'J', 'U', 'Y', 'X', 
                'z', 'c', 'v', 'u', 'n', 'x', 'r', 'j', 'f', 't', '/', '\\', '|', '(', ')', '1', '{', '}', '[', ']', '?', '-', '_', '+', '~', '<', '>', 
                'i', '!', 'l', 'I', ';', ':', ',', '"', '^', '`', "'", '.', ' ']
@@ -22,8 +24,25 @@ if os.name == 'nt':
 else:
     os.system('clear')
 
+def rgb_to_ansi(r, g, b):
+    # For grayscale (r, g, b are roughly the same), use the grayscale ramp in ANSI 256 color
+    if r == g == b:
+        if r < 8:
+            return 16  # The darkest color in the grayscale range
+        if r > 248:
+            return 231  # The lightest color in the grayscale range
+        # Map the value to the 24 grayscale levels in the ANSI palette
+        return 232 + ((r - 8) // 10)
 
-def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
+    # For non-grayscale colors, map to the 6x6x6 color cube
+    ansi_r = int((r / 255.0) * 5)  # Red value mapped to 0-5
+    ansi_g = int((g / 255.0) * 5)  # Green value mapped to 0-5
+    ansi_b = int((b / 255.0) * 5)  # Blue value mapped to 0-5
+
+    # Compute the ANSI 256 color code
+    return 16 + (ansi_r * 36) + (ansi_g * 6) + ansi_b
+
+def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True, color=False, true_color=False):
     # Load image and convert to RGB
     print("\033[?25l", end="") # Makes the cursor invisble in the terminal
 
@@ -67,7 +86,6 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
         ascii_str += char
         colors.append(pixel)
         approx.append(avg_color)
-    
     # Format ASCII string into lines
     # Unused method as I don't really understand the syntax. Below is the re-written method.
     # ascii_img = "\n".join([ascii_str[i:(i + new_width)] for i in range(0, len(ascii_str), new_width)])
@@ -75,14 +93,27 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     # ascii_str is all the correct characters but in one line, so here i space them accordingly to the 'new_width' that i myself provide
     
     ascii_img = ""
-    for i in range(0, len(ascii_str), new_width):
-        # Starts at i and goes up to new width + i (non incusive)
-        ascii_img += ascii_str[i:(i + new_width)] + "\n"
+    if color == False:
+        for i in range(0, len(ascii_str), new_width):
+            # Starts at i and goes up to new width + i (non incusive)
+            ascii_img += ascii_str[i:(i + new_width)] + "\n"
+    else:
+        j = 0
+        for o in range(0, len(ascii_str)):
+            if j == new_width:
+                ascii_img += "\n"
+                j = 0
+            if true_color == False:
+                ascii_img += f"\033[38;5;{rgb_to_ansi(colors[o][0], colors[o][1], colors[o][2])}m{ascii_str[o]}\033[0m"
+            else:
+                ascii_img += f"\033[38;2;{colors[o][0]};{colors[o][1]};{colors[o][2]}m{ascii_str[o]}\033[0m"
+            j += 1
+
     # Strip used here to get rid of the last \n
     print("\033[H" + ascii_img.strip()) # Escape code to print on top of text insted of first removing it.
     return ascii_img.strip(), colors
 
-def fill_terminal_with_text_dynamic(image_path, ascii_set, retain_aspect):
+def fill_terminal_with_text_dynamic(image_path, ascii_set, retain_aspect, color, true_color):
     previous_frame = [0, 0]
     try:
         while True:
@@ -95,7 +126,7 @@ def fill_terminal_with_text_dynamic(image_path, ascii_set, retain_aspect):
                     os.system('clear')
             previous_frame = current_size
             terminal_width = current_size.columns
-            image_to_ascii(image_path, ascii_set, terminal_width, retain_aspect)
+            image_to_ascii(image_path, ascii_set, terminal_width, retain_aspect, color, true_color)
             time.sleep(0.05)
 
     except KeyboardInterrupt:
@@ -106,4 +137,5 @@ width_ter, height_ter = shutil.get_terminal_size()
 
 if __name__ == "__main__":
 
-    fill_terminal_with_text_dynamic("windows.jpg", LIGHT, True)
+    # Parameters: Image path, ascii character set, retain aspect ratio, color mode, (if color mode True) true color mode
+    fill_terminal_with_text_dynamic("kanagawa.jpg", LIGHT, True, False, True)

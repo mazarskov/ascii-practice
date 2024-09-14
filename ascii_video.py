@@ -49,6 +49,25 @@ else:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
+
+def rgb_to_ansi(r, g, b):
+    # For grayscale (r, g, b are roughly the same), use the grayscale ramp in ANSI 256 color
+    if r == g == b:
+        if r < 8:
+            return 16  # The darkest color in the grayscale range
+        if r > 248:
+            return 231  # The lightest color in the grayscale range
+        # Map the value to the 24 grayscale levels in the ANSI palette
+        return 232 + ((r - 8) // 10)
+
+    # For non-grayscale colors, map to the 6x6x6 color cube
+    ansi_r = int((r / 255.0) * 5)  # Red value mapped to 0-5
+    ansi_g = int((g / 255.0) * 5)  # Green value mapped to 0-5
+    ansi_b = int((b / 255.0) * 5)  # Blue value mapped to 0-5
+
+    # Compute the ANSI 256 color code
+    return 16 + (ansi_r * 36) + (ansi_g * 6) + ansi_b
+
 # General keypress function depending on the platform
 def get_keypress():
     if os.name == 'nt':
@@ -58,7 +77,7 @@ def get_keypress():
             return get_keypress_unix()
     return None
 
-def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
+def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True, color=False, true_color=False):
     # Load image and convert to RGB
     print("\033[?25l", end="") # Makes the cursor invisble in the terminal
 
@@ -111,9 +130,21 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
     # ascii_str is all the correct characters but in one line, so here i space them accordingly to the 'new_width' that i myself provide
     
     ascii_img = ""
-    for i in range(0, len(ascii_str), new_width):
-        # Starts at i and goes up to new width + i (non incusive)
-        ascii_img += ascii_str[i:(i + new_width)] + "\n"
+    if color == False:
+        for i in range(0, len(ascii_str), new_width):
+            # Starts at i and goes up to new width + i (non incusive)
+            ascii_img += ascii_str[i:(i + new_width)] + "\n"
+    else:
+        j = 0
+        for o in range(0, len(ascii_str)):
+            if j == new_width:
+                ascii_img += "\n"
+                j = 0
+            if true_color == False:
+                ascii_img += f"\033[38;5;{rgb_to_ansi(colors[o][0], colors[o][1], colors[o][2])}m{ascii_str[o]}\033[0m"
+            else:
+                ascii_img += f"\033[38;2;{colors[o][0]};{colors[o][1]};{colors[o][2]}m{ascii_str[o]}\033[0m"
+            j += 1
     # Strip used here to get rid of the last \n
     f.write(f"{str(len(ascii_img))}\n")
     f.write(f"Video size: {image.size}\n\n")
@@ -122,7 +153,7 @@ def image_to_ascii(image_path, asci_list, new_width=width, retainAspect=True):
 
 
 width_ter, height_ter = shutil.get_terminal_size()
-def video_to_ascii(video_path, ascii_list, new_width, fps):
+def video_to_ascii(video_path, ascii_list, new_width, fps, retain_aspect, color, true_color):
     previous_frame = [0, 0]
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -151,7 +182,7 @@ def video_to_ascii(video_path, ascii_list, new_width, fps):
                 else:
                     os.system('clear')
             previous_frame = current_size
-            generated_image = image_to_ascii(pil_image, ascii_list, new_width, True)
+            generated_image = image_to_ascii(pil_image, ascii_list, new_width, retain_aspect, color, true_color)
                     # Wait for 1 ms between frames (adjust for FPS)
             time.sleep(0.02)
         key = get_keypress()
@@ -168,13 +199,14 @@ def video_to_ascii(video_path, ascii_list, new_width, fps):
 
     cap.release()
     f.close()
+    print("Video ended")
 
 
 if __name__ == "__main__":
 
     width_ter, height_ter = shutil.get_terminal_size()
-    video_path = 'Bad_Apple.mp4'
-    video_to_ascii(video_path, LIGHT, width_ter, 60)
+    video_path = 'key_cat.mp4'
+    video_to_ascii(video_path, LIGHT, width_ter, 60, True, True, True)
 
 
 #image_to_ascii("kanagawa.jpg", LIGHT, width_ter, True)

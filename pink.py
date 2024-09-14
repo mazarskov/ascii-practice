@@ -1,27 +1,3 @@
-import colorama
-from colorama import Fore, Style
-
-# Initialize colorama
-colorama.init(autoreset=True)
-
-# Define the available colors in the terminal
-colors = [
-    Fore.RED,
-    Fore.MAGENTA
-]
-
-def print_colored_string(input_string):
-    # Loop through the input string and print each letter with a different color
-    for i, char in enumerate(input_string):
-        # Use modulo to cycle through the available colors
-        color = colors[i % len(colors)]
-        print(f"{color}{char}", end='')  # end='' prevents newline after each letter
-    print()  # This prints a newline after the string
-
-# Example usage
-print_colored_string("Hello, World!")
-
-
 def print_colored_string_256(input_string):
     for i, char in enumerate(input_string):
         color_code = 16 + (i % 240)  # Cycles through the 240 additional colors
@@ -64,4 +40,4 @@ print(f"\033[38;5;{204}mLOVEYOU", end='')
 print(f"\033[38;5;{203}mI", end='')
 print(f"\033[38;5;{204}mLOVEYOU", end='')
 print(f"\033[38;5;{203}mI", end='')
-print(f"\033[38;5;{204}mLOVEYOU", end='')
+print(f"\033[38;5;{204}mLOVEYOU\033[0m", end='')
