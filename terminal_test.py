@@ -35,7 +35,7 @@ def fill_terminal_with_text_dynamic(text):
             print(f"\033[38;5;203m{full_screen_text[:-1]}\033[0m", end="")
 
             scroll_position = (scroll_position + 1) % len(text)
-            time.sleep(0.5)  # Adjust this value to change scroll speed
+            time.sleep(1)  # Adjust this value to change scroll speed
 
     except KeyboardInterrupt:
         print("\nExiting...")

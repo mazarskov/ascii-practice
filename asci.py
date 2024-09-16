@@ -4,7 +4,6 @@ from PIL import Image, ImageDraw, ImageFont
 ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
 ASCII_CHARS_REVERSE = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
 ASCII_CHARS_REVERSE.reverse()
-print(ASCII_CHARS_REVERSE)
 
 box_size = 10 #8
 font_size = 15 #13
@@ -13,7 +12,7 @@ approx = []
 
 def image_to_ascii(image_path, new_width=width):
     # Load image and convert to RGB
-    image = Image.open(image_path).convert('RGB')
+    image = Image.open(image_path).convert('RGBA')
     file1 = open("ascifile.txt", "w")
     
     # Resize image based on desired width
@@ -31,7 +30,8 @@ def image_to_ascii(image_path, new_width=width):
     
     for pixel in pixels:
         # Calculate ASCII character based on grayscale approximation
-        avg_color = sum(pixel) // 3
+        #avg_color = sum(pixel) // 3
+        avg_color = (pixel[0] + pixel[1] + pixel[3]) // 3
         index = min(avg_color // (256 // len(ASCII_CHARS_REVERSE)), len(ASCII_CHARS_REVERSE) - 1)
         char = ASCII_CHARS_REVERSE[index]
         ascii_str += char
@@ -109,7 +109,7 @@ def ascii_to_colored_image(ascii_str, colors, box_size=20, font_size=None, font_
     # Save the final image
     image.save(output_path)
 
-image_path = "picture.jpg"
+image_path = "drawingicon.png"
 ascii_art, colors = image_to_ascii(image_path)
-ascii_to_colored_image(ascii_art, colors, box_size=box_size, font_size=font_size, font_path="font/SpaceMono-Bold.ttf", output_path='output.png', back_color=35)
+ascii_to_colored_image(ascii_art, colors, box_size=box_size, font_size=font_size, font_path="font/SpaceMono-Bold.ttf", output_path='output.png', back_color=sum(approx) / len(approx))
 print(sum(approx) / len(approx))

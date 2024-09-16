@@ -14,6 +14,8 @@ else:
 
 # Define ASCII characters from dense to light
 LIGHT = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+LIGHT_REVERSE = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+LIGHT_REVERSE.reverse()
 ASCII_CHARS = ['$', '@', 'B', '%', '8', '&', 'W', 'M', '#', '*', 'o', 'a', 'h', 'k', 'b', 'd', 'p', 'q', 'w', 'm', 'Z', 'O', '0', 'Q', 'L', 'C', 'J', 'U', 'Y', 'X', 
                'z', 'c', 'v', 'u', 'n', 'x', 'r', 'j', 'f', 't', '/', '\\', '|', '(', ')', '1', '{', '}', '[', ']', '?', '-', '_', '+', '~', '<', '>', 
                'i', '!', 'l', 'I', ';', ':', ',', '"', '^', '`', "'", '.', ' ']
@@ -189,9 +191,10 @@ def video_to_ascii(video_path, ascii_list, new_width, fps, retain_aspect, color,
         if key == ' ':
             paused = not paused
         elif key == 's':
-            scrensh = open("screenshot.txt", "w")
-            scrensh.write(generated_image[0])
-            scrensh.close()
+            if color == True:
+                scrensh = open("screenshot.txt", "w")
+                scrensh.write(generated_image[0])
+                scrensh.close()
         elif key == 'q':  
             print("Exiting...")
             print("\033[?25h", end="")
@@ -203,10 +206,12 @@ def video_to_ascii(video_path, ascii_list, new_width, fps, retain_aspect, color,
 
 
 if __name__ == "__main__":
-
-    width_ter, height_ter = shutil.get_terminal_size()
-    video_path = 'key_cat.mp4'
-    video_to_ascii(video_path, LIGHT, width_ter, 60, True, True, True)
+    try:
+        width_ter, height_ter = shutil.get_terminal_size()
+        video_path = 'hearts.mp4'
+        video_to_ascii(video_path, LIGHT_REVERSE, width_ter, 60, False, True, True)
+    except KeyboardInterrupt:
+        print("\nExiting...")
 
 
 #image_to_ascii("kanagawa.jpg", LIGHT, width_ter, True)

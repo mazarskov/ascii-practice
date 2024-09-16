@@ -3,7 +3,8 @@ import os
 
 #ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
 ASCII_CHARS = ['.', ',', ':', ';', '+', '*', '?', '%', 'S', '#', '@']
-
+ASCII_CHARS_REVERSE = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
+ASCII_CHARS_REVERSE.reverse()
 
 box = 10
 font = 15
@@ -22,7 +23,7 @@ def image_to_ascii(image_path, new_width=width, ):
     
     # Convert pixels to ASCII
     pixels = image.getdata()
-    ascii_str = "".join([ASCII_CHARS[pixel // 25] for pixel in pixels])
+    ascii_str = "".join([ASCII_CHARS_REVERSE[pixel // 25] for pixel in pixels])
     
     # Format ASCII string into lines
     ascii_img = "\n".join([ascii_str[i:(i + new_width)] for i in range(0, len(ascii_str), new_width)])

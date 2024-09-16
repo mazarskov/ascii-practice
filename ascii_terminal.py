@@ -138,4 +138,4 @@ width_ter, height_ter = shutil.get_terminal_size()
 if __name__ == "__main__":
 
     # Parameters: Image path, ascii character set, retain aspect ratio, color mode, (if color mode True) true color mode
-    fill_terminal_with_text_dynamic("kanagawa.jpg", LIGHT, True, False, True)
+    fill_terminal_with_text_dynamic("drawingicon.png", LIGHT, True, False, True)
